@@ -22,6 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-sm text-gray-400 hover:text-gray-100 transition-colors">
               Dashboard
             </Link>
+            <Link href="/data" className="text-sm text-gray-400 hover:text-gray-100 transition-colors">
+              Data
+            </Link>
             <Link href="/upload" className="text-sm text-gray-400 hover:text-gray-100 transition-colors">
               Upload
             </Link>
