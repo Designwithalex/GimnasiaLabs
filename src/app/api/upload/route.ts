@@ -75,13 +75,23 @@ export async function POST(req: NextRequest) {
     })
     const discarded = allRows.length - validRows.length
 
-    const mappedRows = validRows.map(mapRow).filter((r) => r.player_name !== '')
+    const rawMapped = validRows.map(mapRow).filter((r) => r.player_name !== '')
+
+    // Deduplicate: keep last row per (match_name, player_name)
+    const deduped = Object.values(
+      rawMapped.reduce<Record<string, typeof rawMapped[0]>>((acc, row) => {
+        acc[`${row.match_name}||${row.player_name}`] = row
+        return acc
+      }, {})
+    )
 
     const supabase = createServerSupabase()
-    const { error } = await supabase.from('match_stats').upsert(mappedRows, {
+    const { error } = await supabase.from('match_stats').upsert(deduped, {
       onConflict: 'match_name,player_name',
       ignoreDuplicates: false,
     })
+
+    const mappedRows = deduped
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
