@@ -106,7 +106,7 @@ export default function DataPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-56 bg-gray-900 border-gray-700 text-gray-100 placeholder:text-gray-600"
         />
-        <Select value={matchFilter} onValueChange={setMatchFilter}>
+        <Select value={matchFilter} onValueChange={(v) => setMatchFilter(v ?? 'all')}>
           <SelectTrigger className="w-52 bg-gray-900 border-gray-700 text-gray-100">
             <SelectValue placeholder="Partido" />
           </SelectTrigger>
@@ -115,7 +115,7 @@ export default function DataPage() {
             {matches.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={familyFilter} onValueChange={setFamilyFilter}>
+        <Select value={familyFilter} onValueChange={(v) => setFamilyFilter(v ?? 'all')}>
           <SelectTrigger className="w-40 bg-gray-900 border-gray-700 text-gray-100">
             <SelectValue placeholder="Familia" />
           </SelectTrigger>
