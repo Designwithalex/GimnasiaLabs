@@ -11,7 +11,7 @@ export const PLAYER_FAMILY_MAP: Record<string, 'back' | 'forward'> = {
   'Gonzalo Caputo': 'forward',
   'Ian Rodriguez': 'forward',
   'Javier Yaber': 'forward',
-  'Juan Ara': 'forward',
+  'Juan Ara': 'back',
   'Juan Russo': 'forward',
   'Juan Stratiotis': 'forward',
   'Manuel Ramallo': 'forward',
