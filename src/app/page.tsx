@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [matchFilter, setMatchFilter] = useState('all')
   const [familyFilter, setFamilyFilter] = useState('all')
+  const [subFamilyFilter, setSubFamilyFilter] = useState('all')
   const [playerFilter, setPlayerFilter] = useState('all')
   const [evoMetric, setEvoMetric] = useState<EvolutionMetric>('distance_m')
 
@@ -34,9 +35,15 @@ export default function DashboardPage() {
   const matches = Array.from(new Set(allData.map((d) => d.match_name))).sort()
   const players = Array.from(new Set(allData.map((d) => d.player_name))).sort()
 
+  const SUB_FAMILY_ORDER = ['Front Row', 'Locks', 'Back Row', 'Inside Backs', 'Outside Backs']
+  const subFamilies = SUB_FAMILY_ORDER.filter((sf) =>
+    allData.some((d) => d.sub_family === sf)
+  )
+
   let filtered = allData
   if (matchFilter !== 'all') filtered = filtered.filter((d) => d.match_name === matchFilter)
   if (familyFilter !== 'all') filtered = filtered.filter((d) => d.family === familyFilter)
+  if (subFamilyFilter !== 'all') filtered = filtered.filter((d) => d.sub_family === subFamilyFilter)
   if (playerFilter !== 'all') filtered = filtered.filter((d) => d.player_name === playerFilter)
 
   const evoMetrics: { value: EvolutionMetric; label: string }[] = [
@@ -85,7 +92,7 @@ export default function DashboardPage() {
           </SelectContent>
         </Select>
 
-        <Select value={familyFilter} onValueChange={(v) => setFamilyFilter(v ?? 'all')}>
+        <Select value={familyFilter} onValueChange={(v) => { setFamilyFilter(v ?? 'all'); setSubFamilyFilter('all') }}>
           <SelectTrigger className="w-40 bg-gray-900 border-gray-700 text-gray-100">
             <SelectValue placeholder="Familia" />
           </SelectTrigger>
@@ -93,6 +100,16 @@ export default function DashboardPage() {
             <SelectItem value="all">Todas</SelectItem>
             <SelectItem value="back">Backs</SelectItem>
             <SelectItem value="forward">Forwards</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={subFamilyFilter} onValueChange={(v) => setSubFamilyFilter(v ?? 'all')}>
+          <SelectTrigger className="w-44 bg-gray-900 border-gray-700 text-gray-100">
+            <SelectValue placeholder="Línea" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectItem value="all">Todas las líneas</SelectItem>
+            {subFamilies.map((sf) => <SelectItem key={sf} value={sf}>{sf}</SelectItem>)}
           </SelectContent>
         </Select>
 

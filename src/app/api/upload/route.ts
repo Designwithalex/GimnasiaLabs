@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Papa from 'papaparse'
 import { createServerSupabase } from '@/lib/supabase-server'
-import { getPlayerFamily } from '@/lib/playerMap'
+import { getPlayerFamily, getPlayerSubFamily } from '@/lib/playerMap'
 
 function parseNum(val: unknown): number | null {
   if (val === null || val === undefined || val === '') return null
@@ -12,6 +12,7 @@ function parseNum(val: unknown): number | null {
 function mapRow(row: Record<string, string>) {
   const playerName = (row['Name'] || row['Player Name'] || row['Player'] || '').trim()
   const family = getPlayerFamily(playerName)
+  const sub_family = getPlayerSubFamily(playerName)
 
   const matchName =
     (row['Session Title'] || row['Match Name'] || row['match_name'] || '').trim() || 'Unknown Match'
@@ -23,6 +24,7 @@ function mapRow(row: Record<string, string>) {
     match_date: matchDate,
     player_name: playerName,
     family,
+    sub_family,
     duration_seconds: parseNum(row['Duration'] || row['duration_seconds']),
     distance_m: parseNum(row['Distance (metres)'] || row['Distance'] || row['distance_m']),
     sprint_distance_m: parseNum(row['Sprint Distance (m)'] || row['Sprint Distance'] || row['sprint_distance_m']),
