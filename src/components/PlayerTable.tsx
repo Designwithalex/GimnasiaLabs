@@ -8,7 +8,7 @@ interface Props {
   data: MatchStat[]
 }
 
-type SortKey = 'player_name' | 'family' | 'duration_seconds' | 'distance_m' | 'top_speed_kmh' | 'player_load' | 'sprint_distance_m' | 'power_score'
+type SortKey = 'player_name' | 'family' | 'sub_family' | 'duration_seconds' | 'distance_m' | 'top_speed_kmh' | 'player_load' | 'sprint_distance_m' | 'power_score'
 
 function avg(vals: (number | null)[]): number {
   const valid = vals.filter((v): v is number => v !== null)
@@ -34,6 +34,7 @@ export default function PlayerTable({ data }: Props) {
   const rows = Object.entries(byPlayer).map(([name, stats]) => ({
     player_name: name,
     family: stats[0].family,
+    sub_family: stats[0].sub_family ?? null,
     duration_seconds: avg(stats.map((s) => s.duration_seconds)),
     distance_m: avg(stats.map((s) => s.distance_m)),
     top_speed_kmh: avg(stats.map((s) => s.top_speed_kmh)),
@@ -52,6 +53,7 @@ export default function PlayerTable({ data }: Props) {
   const cols: { key: SortKey; label: string }[] = [
     { key: 'player_name', label: 'Jugador' },
     { key: 'family', label: 'Familia' },
+    { key: 'sub_family', label: 'Línea' },
     { key: 'duration_seconds', label: 'Min Prom' },
     { key: 'distance_m', label: 'Distancia' },
     { key: 'top_speed_kmh', label: 'Top Speed' },
@@ -101,6 +103,7 @@ export default function PlayerTable({ data }: Props) {
                   {row.family}
                 </span>
               </td>
+              <td className="py-2 px-3 text-gray-400 text-xs whitespace-nowrap">{row.sub_family ?? '—'}</td>
               <td className="py-2 px-3 text-gray-300">{Math.round(row.duration_seconds / 60)} min</td>
               <td className="py-2 px-3 text-gray-300">{Math.round(row.distance_m)}m</td>
               <td className="py-2 px-3 text-gray-300">{row.top_speed_kmh.toFixed(1)} km/h</td>

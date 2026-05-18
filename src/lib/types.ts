@@ -5,6 +5,7 @@ export interface MatchStat {
   match_date: string | null
   player_name: string
   family: 'back' | 'forward' | 'unknown'
+  sub_family: string | null
   duration_seconds: number | null
   distance_m: number | null
   sprint_distance_m: number | null

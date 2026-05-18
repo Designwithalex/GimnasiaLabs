@@ -62,6 +62,12 @@ ALTER TABLE match_stats ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON match_stats FOR ALL USING (true);
 ```
 
+### Migración — agregar columna sub_family
+
+```sql
+ALTER TABLE match_stats ADD COLUMN IF NOT EXISTS sub_family text;
+```
+
 ## Deploy en Vercel
 
 1. Importar el repo desde vercel.com

@@ -44,6 +44,7 @@ export default function PlayerPage({ params }: { params: Promise<{ name: string 
   }, [playerName])
 
   const family = stats[0]?.family ?? 'unknown'
+  const subFamily = stats[0]?.sub_family ?? null
   const lineColor = family === 'back' ? '#10b981' : family === 'forward' ? '#06b6d4' : '#6b7280'
 
   const chartData = stats.map((s) => ({
@@ -76,7 +77,10 @@ export default function PlayerPage({ params }: { params: Promise<{ name: string 
         <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm">← Dashboard</Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-100">{playerName}</h1>
-          <span className={`text-xs px-2 py-0.5 rounded border ${familyBadge[family]}`}>{family}</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-xs px-2 py-0.5 rounded border ${familyBadge[family]}`}>{family}</span>
+            {subFamily && <span className="text-xs px-2 py-0.5 rounded border bg-gray-800 text-gray-300 border-gray-700">{subFamily}</span>}
+          </div>
         </div>
       </div>
 
