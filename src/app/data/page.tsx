@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { MatchStat } from '@/lib/types'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 type SortKey = keyof MatchStat
 type SortDir = 'asc' | 'desc'
@@ -49,8 +50,10 @@ export default function DataPage() {
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('match_date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [deletingMatch, setDeletingMatch] = useState<string | null>(null)
+  const [confirmMatch, setConfirmMatch] = useState<string | null>(null)
 
-  useEffect(() => {
+  function loadData() {
     supabase
       .from('match_stats')
       .select('*')
@@ -59,7 +62,27 @@ export default function DataPage() {
         setAllData((data as MatchStat[]) ?? [])
         setLoading(false)
       })
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
+
+  async function handleDeleteMatch(matchName: string) {
+    setDeletingMatch(matchName)
+    try {
+      const res = await fetch('/api/matches', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match_name: matchName }),
+      })
+      if (res.ok) {
+        setAllData((prev) => prev.filter((d) => d.match_name !== matchName))
+        if (matchFilter === matchName) setMatchFilter('all')
+      }
+    } finally {
+      setDeletingMatch(null)
+      setConfirmMatch(null)
+    }
+  }
 
   const matches = useMemo(() => Array.from(new Set(allData.map((d) => d.match_name))).sort(), [allData])
 
@@ -98,6 +121,59 @@ export default function DataPage() {
         <h1 className="text-2xl font-bold text-gray-100">Data</h1>
         <span className="text-sm text-gray-500">{filtered.length} registros</span>
       </div>
+
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-gray-100 text-sm">Gestionar partidos cargados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {matches.length === 0 ? (
+            <p className="text-gray-600 text-sm">No hay partidos cargados.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {matches.map((m) => {
+                const count = allData.filter((d) => d.match_name === m).length
+                const isConfirming = confirmMatch === m
+                const isDeleting = deletingMatch === m
+                return (
+                  <div key={m} className="flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5">
+                    <span className="text-gray-200 text-sm">{m}</span>
+                    <span className="text-gray-500 text-xs">({count})</span>
+                    {isConfirming ? (
+                      <>
+                        <span className="text-red-400 text-xs ml-1">¿Borrar?</span>
+                        <button
+                          onClick={() => handleDeleteMatch(m)}
+                          disabled={isDeleting}
+                          className="text-xs text-red-400 hover:text-red-300 font-medium ml-1 disabled:opacity-50"
+                        >
+                          {isDeleting ? '...' : 'Sí'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmMatch(null)}
+                          className="text-xs text-gray-500 hover:text-gray-300 ml-1"
+                        >
+                          No
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmMatch(m)}
+                        className="ml-1 text-gray-600 hover:text-red-400 transition-colors"
+                        title="Borrar partido"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap gap-3">
         <Input
