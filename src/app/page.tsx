@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { MatchStat } from '@/lib/types'
 import KPICards from '@/components/KPICards'
 import PlayerTable from '@/components/PlayerTable'
+import MatchAverageTables from '@/components/MatchAverageTables'
 import dynamic from 'next/dynamic'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,6 +47,10 @@ export default function DashboardPage() {
   if (subFamilyFilter !== 'all') filtered = filtered.filter((d) => d.sub_family === subFamilyFilter)
   if (playerFilter !== 'all') filtered = filtered.filter((d) => d.player_name === playerFilter)
 
+  const matchReferenceData = matchFilter !== 'all'
+    ? allData.filter((d) => d.match_name === matchFilter)
+    : allData
+
   const evoMetrics: { value: EvolutionMetric; label: string }[] = [
     { value: 'distance_m', label: 'Distancia' },
     { value: 'top_speed_kmh', label: 'Top Speed' },
@@ -81,47 +86,59 @@ export default function DashboardPage() {
         <span className="text-sm text-gray-500">{filtered.length} registros</span>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Select value={matchFilter} onValueChange={(v) => setMatchFilter(v ?? 'all')}>
-          <SelectTrigger className="w-48 bg-gray-900 border-gray-700 text-gray-100">
-            <SelectValue placeholder="Partido" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900 border-gray-700">
-            <SelectItem value="all">Todos los partidos</SelectItem>
-            {matches.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Partido</span>
+          <Select value={matchFilter} onValueChange={(v) => setMatchFilter(v ?? 'all')}>
+            <SelectTrigger className="w-48 bg-gray-900 border-gray-700 text-gray-100">
+              <SelectValue placeholder="Todos los partidos" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectItem value="all">Todos los partidos</SelectItem>
+              {matches.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={familyFilter} onValueChange={(v) => { setFamilyFilter(v ?? 'all'); setSubFamilyFilter('all') }}>
-          <SelectTrigger className="w-40 bg-gray-900 border-gray-700 text-gray-100">
-            <SelectValue placeholder="Familia" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900 border-gray-700">
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="back">Backs</SelectItem>
-            <SelectItem value="forward">Forwards</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Familia</span>
+          <Select value={familyFilter} onValueChange={(v) => { setFamilyFilter(v ?? 'all'); setSubFamilyFilter('all') }}>
+            <SelectTrigger className="w-40 bg-gray-900 border-gray-700 text-gray-100">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="back">Backs</SelectItem>
+              <SelectItem value="forward">Forwards</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={subFamilyFilter} onValueChange={(v) => setSubFamilyFilter(v ?? 'all')}>
-          <SelectTrigger className="w-44 bg-gray-900 border-gray-700 text-gray-100">
-            <SelectValue placeholder="Línea" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900 border-gray-700">
-            <SelectItem value="all">Todas las líneas</SelectItem>
-            {subFamilies.map((sf) => <SelectItem key={sf} value={sf}>{sf}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Línea</span>
+          <Select value={subFamilyFilter} onValueChange={(v) => setSubFamilyFilter(v ?? 'all')}>
+            <SelectTrigger className="w-44 bg-gray-900 border-gray-700 text-gray-100">
+              <SelectValue placeholder="Todas las líneas" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectItem value="all">Todas las líneas</SelectItem>
+              {subFamilies.map((sf) => <SelectItem key={sf} value={sf}>{sf}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={playerFilter} onValueChange={(v) => setPlayerFilter(v ?? 'all')}>
-          <SelectTrigger className="w-48 bg-gray-900 border-gray-700 text-gray-100">
-            <SelectValue placeholder="Jugador" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900 border-gray-700">
-            <SelectItem value="all">Todos los jugadores</SelectItem>
-            {players.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Jugador</span>
+          <Select value={playerFilter} onValueChange={(v) => setPlayerFilter(v ?? 'all')}>
+            <SelectTrigger className="w-48 bg-gray-900 border-gray-700 text-gray-100">
+              <SelectValue placeholder="Todos los jugadores" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700">
+              <SelectItem value="all">Todos los jugadores</SelectItem>
+              {players.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <KPICards data={filtered} />
@@ -180,6 +197,15 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <PlayerTable data={filtered} />
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle className="text-gray-100 text-base">Referencia de partido &amp; planificación de entrenamiento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MatchAverageTables data={matchReferenceData} />
         </CardContent>
       </Card>
     </div>
