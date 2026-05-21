@@ -10,6 +10,7 @@ export interface TrainingSession {
   year: number
   week: number
   day: 'lunes' | 'martes' | 'jueves'
+  sub_family: string
   distance_m: number
   sprint_distance_m: number
   player_load: number
@@ -32,7 +33,18 @@ const METRIC_LABELS: Record<Metric, string> = {
   player_load: 'Player Load',
 }
 
-const DAY_COLORS = { lunes: '#10b981', martes: '#06b6d4', jueves: '#f59e0b' }
+const SUB_FAMILY_ORDER = ['Front Row', 'Locks', 'Back Row', 'Inside Backs', 'Outside Backs']
+
+const SF_COLORS: Record<string, string> = {
+  'Front Row':     '#ef4444',
+  'Locks':         '#f59e0b',
+  'Back Row':      '#10b981',
+  'Inside Backs':  '#06b6d4',
+  'Outside Backs': '#8b5cf6',
+}
+
+const DAY_SHORT: Record<string, string> = { lunes: 'Lun', martes: 'Mar', jueves: 'Jue' }
+const DAYS_ORDER = ['lunes', 'martes', 'jueves']
 
 function getMondayOfWeek(year: number, week: number): Date {
   const jan4 = new Date(year, 0, 4)
@@ -53,28 +65,38 @@ export default function TrainingVolumeChart({ sessions }: Props) {
 
   const yearSessions = sessions.filter((s) => s.year === year)
 
-  let weeksToShow: number[]
+  // Build week+day combos to show
+  let combosToShow: { week: number; day: string }[]
   if (monthFilter !== null) {
-    weeksToShow = Array.from({ length: 53 }, (_, i) => i + 1).filter((w) => {
+    const weeksInMonth = Array.from({ length: 53 }, (_, i) => i + 1).filter((w) => {
       const monday = getMondayOfWeek(year, w)
       return monday.getMonth() === monthFilter && monday.getFullYear() === year
     })
+    combosToShow = weeksInMonth.flatMap((week) =>
+      DAYS_ORDER.map((day) => ({ week, day }))
+    )
   } else {
-    const weeksWithData = new Set(yearSessions.map((s) => s.week))
-    weeksToShow = Array.from(weeksWithData).sort((a, b) => a - b)
+    const seen = new Set<string>()
+    for (const s of yearSessions) {
+      seen.add(`${s.week}|${s.day}`)
+    }
+    combosToShow = Array.from(seen)
+      .map((c) => { const [w, d] = c.split('|'); return { week: Number(w), day: d } })
+      .sort((a, b) => a.week !== b.week ? a.week - b.week : DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day))
   }
 
-  const chartData = weeksToShow.map((week) => {
+  const chartData = combosToShow.map(({ week, day }) => {
     const monday = getMondayOfWeek(year, week)
-    const label = `Sem ${week} (${monday.getDate()} ${MONTHS_ES[monday.getMonth()].slice(0, 3)})`
-    const get = (d: 'lunes' | 'martes' | 'jueves') => {
-      const s = yearSessions.find((x) => x.week === week && x.day === d)
-      return s ? Math.round(s[metric] * 10) / 10 : 0
+    const name = `S${week} ${DAY_SHORT[day]} (${monday.getDate()} ${MONTHS_ES[monday.getMonth()].slice(0, 3)})`
+    const point: Record<string, string | number> = { name }
+    for (const sf of SUB_FAMILY_ORDER) {
+      const entry = yearSessions.find((s) => s.week === week && s.day === day && s.sub_family === sf)
+      point[sf] = entry ? Math.round(entry[metric] * 10) / 10 : 0
     }
-    return { name: label, lunes: get('lunes'), martes: get('martes'), jueves: get('jueves') }
+    return point
   })
 
-  const hasData = chartData.some((d) => d.lunes > 0 || d.martes > 0 || d.jueves > 0)
+  const hasData = chartData.some((d) => SUB_FAMILY_ORDER.some((sf) => Number(d[sf]) > 0))
 
   const years = Array.from(
     new Set([currentYear, currentYear - 1, ...sessions.map((s) => s.year)])
@@ -111,23 +133,23 @@ export default function TrainingVolumeChart({ sessions }: Props) {
           No hay sesiones guardadas para {monthFilter !== null ? MONTHS_ES[monthFilter] : 'este año'}.
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 60 }}>
+        <ResponsiveContainer width="100%" height={340}>
+          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 70 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} interval={0} angle={-35} textAnchor="end" />
+            <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 9 }} interval={0} angle={-40} textAnchor="end" />
             <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} tickFormatter={(v) => metric === 'player_load' ? String(v) : `${v}m`} />
             <Tooltip
               contentStyle={{ background: '#1f2937', border: '1px solid #374151', borderRadius: 8 }}
               labelStyle={{ color: '#F9FAFB', fontSize: 12 }}
               formatter={(v, name) => [
                 metric === 'player_load' ? Number(v).toFixed(1) : `${Number(v).toLocaleString('es-AR')}m`,
-                String(name).charAt(0).toUpperCase() + String(name).slice(1),
+                String(name),
               ]}
             />
-            <Legend wrapperStyle={{ paddingTop: 16 }} formatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
-            <Bar dataKey="lunes" fill={DAY_COLORS.lunes} radius={[3, 3, 0, 0]} name="lunes" />
-            <Bar dataKey="martes" fill={DAY_COLORS.martes} radius={[3, 3, 0, 0]} name="martes" />
-            <Bar dataKey="jueves" fill={DAY_COLORS.jueves} radius={[3, 3, 0, 0]} name="jueves" />
+            <Legend wrapperStyle={{ paddingTop: 16 }} />
+            {SUB_FAMILY_ORDER.map((sf) => (
+              <Bar key={sf} dataKey={sf} stackId="stack" fill={SF_COLORS[sf]} radius={[0, 0, 0, 0]} />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       )}

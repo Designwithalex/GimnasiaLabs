@@ -57,45 +57,59 @@ export default function PlanificacionPage() {
     setSessions(loadSessions())
   }, [])
 
-  // Compute totals from match averages × pct for the save preview
   const rows = buildRows(allData)
+
+  // Totals preview (sum across all sub-families × pct)
   const totals = rows.reduce(
     (acc, r) => ({
-      distance_m: acc.distance_m + r.distance_m,
-      sprint_distance_m: acc.sprint_distance_m + r.sprint_distance_m,
-      player_load: acc.player_load + r.player_load,
+      distance_m: acc.distance_m + r.distance_m * pct / 100,
+      sprint_distance_m: acc.sprint_distance_m + r.sprint_distance_m * pct / 100,
+      player_load: acc.player_load + r.player_load * pct / 100,
     }),
     { distance_m: 0, sprint_distance_m: 0, player_load: 0 }
   )
-  const scaled = {
-    distance_m: Math.round(totals.distance_m * pct / 100),
-    sprint_distance_m: Math.round(totals.sprint_distance_m * pct / 100),
-    player_load: Math.round(totals.player_load * pct / 100 * 10) / 10,
-  }
 
   function handleSave() {
-    const id = `${logYear}-W${logWeek}-${logDay}`
-    const session: TrainingSession = {
-      id,
+    // One entry per sub-family for this week+day
+    const newEntries: TrainingSession[] = rows.map((row) => ({
+      id: `${logYear}-W${logWeek}-${logDay}-${row.sub_family}`,
       year: logYear,
       week: logWeek,
       day: logDay,
-      distance_m: scaled.distance_m,
-      sprint_distance_m: scaled.sprint_distance_m,
-      player_load: scaled.player_load,
-    }
-    const updated = [...sessions.filter((s) => s.id !== id), session]
+      sub_family: row.sub_family,
+      distance_m: Math.round(row.distance_m * pct / 100),
+      sprint_distance_m: Math.round(row.sprint_distance_m * pct / 100),
+      player_load: Math.round(row.player_load * pct / 100 * 10) / 10,
+    }))
+
+    // Upsert: remove old entries for same year+week+day, add new
+    const kept = sessions.filter(
+      (s) => !(s.year === logYear && s.week === logWeek && s.day === logDay)
+    )
+    const updated = [...kept, ...newEntries]
     saveSessions(updated)
     setSessions(updated)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
-  function handleDelete(id: string) {
-    const updated = sessions.filter((s) => s.id !== id)
+  function handleDelete(year: number, week: number, day: Day) {
+    const updated = sessions.filter(
+      (s) => !(s.year === year && s.week === week && s.day === day)
+    )
     saveSessions(updated)
     setSessions(updated)
   }
+
+  // Group sessions by year+week+day for the list display
+  const sessionGroups = Object.values(
+    sessions.reduce<Record<string, { year: number; week: number; day: Day; totalDistance: number }>>((acc, s) => {
+      const key = `${s.year}-W${s.week}-${s.day}`
+      if (!acc[key]) acc[key] = { year: s.year, week: s.week, day: s.day as Day, totalDistance: 0 }
+      acc[key].totalDistance += s.distance_m
+      return acc
+    }, {})
+  ).sort((a, b) => a.year !== b.year ? b.year - a.year : b.week - a.week)
 
   if (loading) {
     return (
@@ -111,7 +125,6 @@ export default function PlanificacionPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-100">Planificación</h1>
 
-      {/* Reference + target tables */}
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
           <CardTitle className="text-gray-100 text-base">Referencia de partido &amp; volumen a entrenar</CardTitle>
@@ -125,7 +138,6 @@ export default function PlanificacionPage() {
         </CardContent>
       </Card>
 
-      {/* Session logger */}
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
           <CardTitle className="text-gray-100 text-base">Programar sesión</CardTitle>
@@ -175,23 +187,22 @@ export default function PlanificacionPage() {
               </div>
             </div>
 
-            {/* Preview */}
             {allData.length > 0 && rows.length > 0 && (
               <div className="bg-gray-800/60 rounded-lg p-4 flex flex-wrap gap-6 text-sm">
                 <div>
                   <span className="text-gray-400">Distancia total</span>
-                  <p className="text-emerald-400 font-bold text-lg">{scaled.distance_m.toLocaleString('es-AR')} m</p>
+                  <p className="text-emerald-400 font-bold text-lg">{Math.round(totals.distance_m).toLocaleString('es-AR')} m</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Dist. alta vel.</span>
-                  <p className="text-cyan-400 font-bold text-lg">{scaled.sprint_distance_m.toLocaleString('es-AR')} m</p>
+                  <p className="text-cyan-400 font-bold text-lg">{Math.round(totals.sprint_distance_m).toLocaleString('es-AR')} m</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Player Load</span>
-                  <p className="text-amber-400 font-bold text-lg">{scaled.player_load.toFixed(1)}</p>
+                  <p className="text-amber-400 font-bold text-lg">{totals.player_load.toFixed(1)}</p>
                 </div>
                 <div className="text-xs text-gray-500 self-end pb-1">
-                  {pct}% del promedio de partido — Semana {logWeek} · {logDay}
+                  {pct}% del promedio de partido · Semana {logWeek} · {logDay}
                 </div>
               </div>
             )}
@@ -207,25 +218,24 @@ export default function PlanificacionPage() {
         </CardContent>
       </Card>
 
-      {/* Annual chart */}
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
           <CardTitle className="text-gray-100 text-base">Historial de planificación anual</CardTitle>
         </CardHeader>
         <CardContent>
           <TrainingVolumeChart sessions={sessions} />
-          {sessions.length > 0 && (
+          {sessionGroups.length > 0 && (
             <details className="mt-4">
               <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors">
-                Ver / eliminar sesiones guardadas ({sessions.length})
+                Ver / eliminar sesiones guardadas ({sessionGroups.length})
               </summary>
               <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
-                {[...sessions].sort((a, b) => a.year !== b.year ? b.year - a.year : b.week - a.week).map((s) => (
-                  <div key={s.id} className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-800/50 text-xs text-gray-400">
-                    <span className="capitalize">{s.year} · Sem {s.week} · {s.day}</span>
-                    <span className="text-gray-500">{s.distance_m.toLocaleString('es-AR')} m</span>
+                {sessionGroups.map((g) => (
+                  <div key={`${g.year}-W${g.week}-${g.day}`} className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-800/50 text-xs text-gray-400">
+                    <span className="capitalize">{g.year} · Sem {g.week} · {g.day}</span>
+                    <span className="text-gray-500">{g.totalDistance.toLocaleString('es-AR')} m totales</span>
                     <button
-                      onClick={() => handleDelete(s.id)}
+                      onClick={() => handleDelete(g.year, g.week, g.day)}
                       className="text-red-500 hover:text-red-400 ml-4 transition-colors"
                     >
                       Eliminar
