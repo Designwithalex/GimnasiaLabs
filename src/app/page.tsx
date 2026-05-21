@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { MatchStat } from '@/lib/types'
 import KPICards from '@/components/KPICards'
 import PlayerTable from '@/components/PlayerTable'
-import MatchAverageTables from '@/components/MatchAverageTables'
 import dynamic from 'next/dynamic'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,10 +45,6 @@ export default function DashboardPage() {
   if (familyFilter !== 'all') filtered = filtered.filter((d) => d.family === familyFilter)
   if (subFamilyFilter !== 'all') filtered = filtered.filter((d) => d.sub_family === subFamilyFilter)
   if (playerFilter !== 'all') filtered = filtered.filter((d) => d.player_name === playerFilter)
-
-  const matchReferenceData = matchFilter !== 'all'
-    ? allData.filter((d) => d.match_name === matchFilter)
-    : allData
 
   const evoMetrics: { value: EvolutionMetric; label: string }[] = [
     { value: 'distance_m', label: 'Distancia' },
@@ -200,14 +195,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-gray-100 text-base">Referencia de partido &amp; planificación de entrenamiento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MatchAverageTables data={matchReferenceData} />
-        </CardContent>
-      </Card>
     </div>
   )
 }
