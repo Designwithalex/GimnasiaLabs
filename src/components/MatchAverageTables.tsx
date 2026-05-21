@@ -81,29 +81,8 @@ export default function MatchAverageTables({ data, pct: externalPct, onPctChange
 
       {/* Table 2 — training target */}
       <div>
-        <div className="flex flex-wrap items-center gap-4 mb-3">
-          <h3 className="text-base font-semibold text-gray-100">Volumen a entrenar — por línea</h3>
-          <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5">
-            <span className="text-xs text-gray-400">Volumen estimado</span>
-            <button
-              onClick={() => setPct(Math.max(0, pct - 5))}
-              className="w-6 h-6 rounded text-gray-300 hover:bg-gray-700 flex items-center justify-center text-base leading-none"
-            >−</button>
-            <input
-              type="number"
-              min={0}
-              max={200}
-              value={pct}
-              onChange={(e) => setPct(Math.min(200, Math.max(0, Number(e.target.value))))}
-              className="w-14 text-center bg-transparent text-emerald-400 font-bold text-sm focus:outline-none"
-            />
-            <span className="text-emerald-400 font-bold text-sm">%</span>
-            <button
-              onClick={() => setPct(Math.min(200, pct + 5))}
-              className="w-6 h-6 rounded text-gray-300 hover:bg-gray-700 flex items-center justify-center text-base leading-none"
-            >+</button>
-            <span className="text-xs text-gray-500">del partido</span>
-          </div>
+        <div className="mb-3">
+          <h3 className="text-base font-semibold text-gray-100">Volumen promedio por partido — por línea</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
