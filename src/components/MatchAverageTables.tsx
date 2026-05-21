@@ -19,10 +19,24 @@ function round(val: number, precision: number): number {
   return Math.round(val / precision) * precision
 }
 
-function buildRows(data: MatchStat[]) {
-  return SUB_FAMILY_ORDER.map((sf) => {
+interface RowData {
+  sub_family: string
+  matchCount: number
+  distance_m: number
+  sprint_distance_m: number
+  top_speed_kmh: number
+  power_plays: number
+  max_acceleration: number
+  impacts: number
+  player_load: number
+  duration_seconds: number
+}
+
+function buildRows(data: MatchStat[]): RowData[] {
+  const result: RowData[] = []
+  for (const sf of SUB_FAMILY_ORDER) {
     const sfData = data.filter((d) => d.sub_family === sf)
-    if (!sfData.length) return null
+    if (!sfData.length) continue
 
     const byMatch: Record<string, MatchStat[]> = {}
     for (const row of sfData) {
@@ -41,7 +55,7 @@ function buildRows(data: MatchStat[]) {
       duration_seconds: avg(players.map((p) => p.duration_seconds)),
     }))
 
-    return {
+    result.push({
       sub_family: sf,
       matchCount: matchAvgs.length,
       distance_m: avg(matchAvgs.map((m) => m.distance_m)),
@@ -52,8 +66,9 @@ function buildRows(data: MatchStat[]) {
       impacts: avg(matchAvgs.map((m) => m.impacts)),
       player_load: avg(matchAvgs.map((m) => m.player_load)),
       duration_seconds: avg(matchAvgs.map((m) => m.duration_seconds)),
-    }
-  }).filter(Boolean) as NonNullable<ReturnType<typeof buildRows>[number]>[]
+    })
+  }
+  return result
 }
 
 const thClass = 'py-2 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap text-right first:text-left'
