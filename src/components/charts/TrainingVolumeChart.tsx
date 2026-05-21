@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 
 export interface TrainingSession {
@@ -65,21 +65,17 @@ export default function TrainingVolumeChart({ sessions }: Props) {
 
   const yearSessions = sessions.filter((s) => s.year === year)
 
-  // Build week+day combos to show
+  // Build ordered list of week+day combos to show on X axis
   let combosToShow: { week: number; day: string }[]
   if (monthFilter !== null) {
     const weeksInMonth = Array.from({ length: 53 }, (_, i) => i + 1).filter((w) => {
       const monday = getMondayOfWeek(year, w)
       return monday.getMonth() === monthFilter && monday.getFullYear() === year
     })
-    combosToShow = weeksInMonth.flatMap((week) =>
-      DAYS_ORDER.map((day) => ({ week, day }))
-    )
+    combosToShow = weeksInMonth.flatMap((week) => DAYS_ORDER.map((day) => ({ week, day })))
   } else {
     const seen = new Set<string>()
-    for (const s of yearSessions) {
-      seen.add(`${s.week}|${s.day}`)
-    }
+    for (const s of yearSessions) seen.add(`${s.week}|${s.day}`)
     combosToShow = Array.from(seen)
       .map((c) => { const [w, d] = c.split('|'); return { week: Number(w), day: d } })
       .sort((a, b) => a.week !== b.week ? a.week - b.week : DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day))
@@ -87,7 +83,7 @@ export default function TrainingVolumeChart({ sessions }: Props) {
 
   const chartData = combosToShow.map(({ week, day }) => {
     const monday = getMondayOfWeek(year, week)
-    const name = `S${week} ${DAY_SHORT[day]} (${monday.getDate()} ${MONTHS_ES[monday.getMonth()].slice(0, 3)})`
+    const name = `S${week} ${DAY_SHORT[day]}`
     const point: Record<string, string | number> = { name }
     for (const sf of SUB_FAMILY_ORDER) {
       const entry = yearSessions.find((s) => s.week === week && s.day === day && s.sub_family === sf)
@@ -134,9 +130,9 @@ export default function TrainingVolumeChart({ sessions }: Props) {
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={340}>
-          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 70 }}>
+          <LineChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 9 }} interval={0} angle={-40} textAnchor="end" />
+            <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} interval={0} angle={-35} textAnchor="end" />
             <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} tickFormatter={(v) => metric === 'player_load' ? String(v) : `${v}m`} />
             <Tooltip
               contentStyle={{ background: '#1f2937', border: '1px solid #374151', borderRadius: 8 }}
@@ -148,9 +144,18 @@ export default function TrainingVolumeChart({ sessions }: Props) {
             />
             <Legend wrapperStyle={{ paddingTop: 16 }} />
             {SUB_FAMILY_ORDER.map((sf) => (
-              <Bar key={sf} dataKey={sf} stackId="stack" fill={SF_COLORS[sf]} radius={[0, 0, 0, 0]} />
+              <Line
+                key={sf}
+                type="monotone"
+                dataKey={sf}
+                stroke={SF_COLORS[sf]}
+                strokeWidth={2}
+                dot={{ r: 4, fill: SF_COLORS[sf], strokeWidth: 0 }}
+                activeDot={{ r: 6 }}
+                connectNulls={false}
+              />
             ))}
-          </BarChart>
+          </LineChart>
         </ResponsiveContainer>
       )}
     </div>

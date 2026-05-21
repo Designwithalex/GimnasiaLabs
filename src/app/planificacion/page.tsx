@@ -188,21 +188,35 @@ export default function PlanificacionPage() {
             </div>
 
             {allData.length > 0 && rows.length > 0 && (
-              <div className="bg-gray-800/60 rounded-lg p-4 flex flex-wrap gap-6 text-sm">
-                <div>
-                  <span className="text-gray-400">Distancia total</span>
-                  <p className="text-emerald-400 font-bold text-lg">{Math.round(totals.distance_m).toLocaleString('es-AR')} m</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Dist. alta vel.</span>
-                  <p className="text-cyan-400 font-bold text-lg">{Math.round(totals.sprint_distance_m).toLocaleString('es-AR')} m</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Player Load</span>
-                  <p className="text-amber-400 font-bold text-lg">{totals.player_load.toFixed(1)}</p>
-                </div>
-                <div className="text-xs text-gray-500 self-end pb-1">
-                  {pct}% del promedio de partido · Semana {logWeek} · {logDay}
+              <div className="space-y-2">
+                <div className="text-xs text-gray-500 mb-1">{pct}% del promedio de partido · Semana {logWeek} · {logDay}</div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="py-2 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Línea</th>
+                        <th className="py-2 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide">Distancia (m)</th>
+                        <th className="py-2 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide">Dist. Alta Vel. (m)</th>
+                        <th className="py-2 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide">Player Load</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr key={row.sub_family} className="border-b border-gray-800/60">
+                          <td className="py-2 px-3 font-medium text-gray-100">{row.sub_family}</td>
+                          <td className="py-2 px-3 text-right font-semibold text-emerald-400">{Math.round(row.distance_m * pct / 100).toLocaleString('es-AR')}</td>
+                          <td className="py-2 px-3 text-right font-semibold text-cyan-400">{Math.round(row.sprint_distance_m * pct / 100).toLocaleString('es-AR')}</td>
+                          <td className="py-2 px-3 text-right font-semibold text-amber-400">{(row.player_load * pct / 100).toFixed(1)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t border-gray-600">
+                        <td className="py-2 px-3 text-xs font-bold text-gray-300 uppercase">Total</td>
+                        <td className="py-2 px-3 text-right font-bold text-emerald-300">{Math.round(totals.distance_m).toLocaleString('es-AR')}</td>
+                        <td className="py-2 px-3 text-right font-bold text-cyan-300">{Math.round(totals.sprint_distance_m).toLocaleString('es-AR')}</td>
+                        <td className="py-2 px-3 text-right font-bold text-amber-300">{totals.player_load.toFixed(1)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
