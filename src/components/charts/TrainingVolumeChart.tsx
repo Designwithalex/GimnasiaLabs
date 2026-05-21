@@ -119,8 +119,8 @@ export default function TrainingVolumeChart({ sessions }: Props) {
             <Tooltip
               contentStyle={{ background: '#1f2937', border: '1px solid #374151', borderRadius: 8 }}
               labelStyle={{ color: '#F9FAFB', fontSize: 12 }}
-              formatter={(v: number, name: string) => [
-                metric === 'player_load' ? v.toFixed(1) : `${Number(v).toLocaleString('es-AR')}m`,
+              formatter={(v, name: string) => [
+                metric === 'player_load' ? Number(v).toFixed(1) : `${Number(v).toLocaleString('es-AR')}m`,
                 name.charAt(0).toUpperCase() + name.slice(1),
               ]}
             />
